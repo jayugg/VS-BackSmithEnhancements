@@ -190,31 +190,27 @@ namespace BlackSmithEnhancements.Item
         public override void OnHeldInteractStart(ItemSlot slot, EntityAgent byEntity, BlockSelection blockSel, EntitySelection entitySel, bool firstEvent, ref EnumHandHandling handling)
         {
             base.OnHeldInteractStart(slot, byEntity, blockSel, entitySel, firstEvent, ref handling);
+            handling = EnumHandHandling.NotHandled; // Not handled by default
+            if (slot.Empty)
+                return;
 
-            if (handling != EnumHandHandling.PreventDefault)
+            if (!byEntity.LeftHandItemSlot.Empty)
             {
-                if (slot.Empty) {
-                    return;
-                }
-
-                if (!byEntity.LeftHandItemSlot.Empty)
-                {
-                    var text = byEntity.LeftHandItemSlot.Itemstack.GetName().ToLower();
-                    (api as ICoreClientAPI)?.TriggerIngameError(!byEntity.LeftHandItemSlot.Empty, "Requires both hands", Lang.Get("ingameerror-bellow-requires-bothhands-{0}", text.UcFirst()));
-                    return;
-                }
-
-                if (byEntity.World is IClientWorldAccessor)
-                {
-                    slot.Itemstack.TempAttributes.SetInt("renderVariant", 1);
-                }
-
-                byEntity.Attributes.SetInt("startedBellowing", 1);
-                byEntity.Attributes.SetInt("bellowCancel", 0);
-                slot.Itemstack.Attributes.SetInt("renderVariant", 1);
-                byEntity.AnimManager.StartAnimation("usebellow");
-                handling = EnumHandHandling.PreventDefault;
+                var text = byEntity.LeftHandItemSlot.Itemstack.GetName().ToLower();
+                (api as ICoreClientAPI)?.TriggerIngameError(!byEntity.LeftHandItemSlot.Empty, "Requires both hands", Lang.Get("ingameerror-bellow-requires-bothhands-{0}", text.UcFirst()));
+                return;
             }
+
+            if (byEntity.World is IClientWorldAccessor)
+            {
+                slot.Itemstack.TempAttributes.SetInt("renderVariant", 1);
+            }
+
+            byEntity.Attributes.SetInt("startedBellowing", 1);
+            byEntity.Attributes.SetInt("bellowCancel", 0);
+            slot.Itemstack.Attributes.SetInt("renderVariant", 1);
+            byEntity.StartAnimation("usebellow");
+            handling = EnumHandHandling.PreventDefault;
         }
         
         public override bool OnHeldInteractStep(float secondsUsed, ItemSlot slot, EntityAgent byEntity, BlockSelection blockSel, EntitySelection entitySel)
@@ -235,7 +231,7 @@ namespace BlackSmithEnhancements.Item
         public override bool OnHeldInteractCancel(float secondsUsed, ItemSlot slot, EntityAgent byEntity, BlockSelection blockSel, EntitySelection entitySel, EnumItemUseCancelReason cancelReason)
         {
             byEntity.Attributes.SetInt("startedBellowing", 0);
-            byEntity.AnimManager.StopAnimation("usebellow");
+            byEntity.StopAnimation("usebellow");
 
             if (byEntity.World is IClientWorldAccessor)
             {
